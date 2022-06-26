@@ -2,16 +2,22 @@ package server
 
 import (
 	"fmt"
+	"math/rand"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"k8s.io/klog/v2"
+
+	"github.com/Camp_K8S/session2/metrics"
 )
 
 func ListenAndServe(addr string) {
 	mux := http.NewServeMux()
 	mux.Handle("/", rootHandler())
 	mux.Handle("/healthz", healthHandler())
+	mux.Handle("/metrics", promhttp.Handler())
 
 	s := &http.Server{
 		Addr:    addr,
@@ -19,6 +25,11 @@ func ListenAndServe(addr string) {
 	}
 
 	klog.Fatal(s.ListenAndServe())
+}
+
+func randInt(min int, max int) int {
+	rand.Seed(time.Now().UTC().UnixNano())
+	return min + rand.Intn(max-min)
 }
 
 func rootHandler() http.Handler {
@@ -29,6 +40,11 @@ func rootHandler() http.Handler {
 		}
 
 		w.Header().Set("version", os.Getenv("VERSION"))
+
+		timer := metrics.NewTimer()
+		defer timer.ObserveTotal()
+		delay := randInt(10, 2000)
+		time.Sleep(time.Millisecond * time.Duration(delay))
 	})
 }
 
