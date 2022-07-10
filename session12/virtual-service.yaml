@@ -1,0 +1,21 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: httpserver-vs
+spec:
+  gateways:
+    - httpserver-gw
+  hosts:
+    - httpserver.cncamp.io
+    - uri:
+        prefix: /httpserver
+        rewrite:
+          uri: /
+  http:
+    - match:
+        - port: 443
+      route:
+        - destination:
+            host: httpserver
+            port:
+              number: 5432
